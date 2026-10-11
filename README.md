@@ -30,7 +30,7 @@ graph TD
     classDef secret fill:#FDE047,stroke:#CA8A04,color:#000;
     classDef cronjob fill:#C084FC,stroke:#9333EA,color:#000;
 
-    User((User)) -->|HTTPS| CF_EDGE(("Cloudflare Edge<br>[*.marcodifrancesco.com / *.difra.me]"))
+    User((User)) -->|HTTPS| CF_EDGE(("Cloudflare Edge<br>[*.marcodifrancesco.com]"))
     CF_EDGE -->|Tunnel| CF_TUNNEL(["Cloudflare Tunnel<br>[cloudflared]"])
     CF_TUNNEL -->|HTTP:80| TRAEFIK_SVC
 
@@ -71,6 +71,15 @@ graph TD
             AI_DEPLOY -. "mounts" .-> AI_VOL_DATA
             AI_DEPLOY -. "mounts" .-> AI_VOL_KEY
         end
+
+        subgraph "SearXNG"
+            AI_SEARX_SVC{{"Service<br>[searxng]<br>(ClusterIP)"}}
+            AI_SEARX_DEPLOY(["Deployment<br>[searxng]"])
+
+            AI_SEARX_SVC -. "port 8080" .-> AI_SEARX_DEPLOY
+        end
+
+        AI_DEPLOY -. "web search :80" .-> AI_SEARX_SVC
     end
 
     subgraph "Namespace: dashboard"
@@ -264,7 +273,7 @@ graph TD
         subgraph "Radarr"
             TOR_RAD_SVC{{"Service<br>[radarr]<br>(ClusterIP)"}}
             TOR_RAD_DEPLOY(["Deployment<br>[radarr]"])
-            TOR_RAD_VOL[("HostPath<br>[radarr-config]")]
+            TOR_RAD_VOL[("HostPath<br>[config & radarr-downloads]")]
 
             TOR_RAD_SVC -. "port 7878" .-> TOR_RAD_DEPLOY
             TOR_RAD_DEPLOY -. "mounts" .-> TOR_RAD_VOL
@@ -296,7 +305,7 @@ graph TD
     class GRAF_SVC,GRAF_DEPLOY grafana;
     class PROM_SVC,PROM_DEPLOY prometheus;
     class TELE_SVC,TELE_DEPLOY telegraf;
-    class AI_SVC,AI_DEPLOY ai;
+    class AI_SVC,AI_DEPLOY,AI_SEARX_SVC,AI_SEARX_DEPLOY ai;
     class FILM_SVC,FILM_DEPLOY film;
     class FIN_SVC,FIN_DEPLOY finance;
     class LLM_SVC,LLM_DEPLOY litellm;
@@ -320,13 +329,13 @@ graph TD
 | Namespace | Service / Deployment | Ingress Host |
 |---|---|---|
 | **`kube-system`** | `traefik`<br>`traefik-metrics` | `192.168.1.101` |
-| **`ai`** | `open-webui` | `ai.marcodifrancesco.com` |
+| **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
 | **`dashboard`** | `grafana`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)* |
 | **`film`** | `jellyfin` | `film.marcodifrancesco.com`<br>*(redirect: `jellyfin.`)* |
-| **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api`<br>`finance.difra.me/api` |
+| **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api` |
 | **`litellm`** | `litellm`<br>`postgres`<br>`litellm-restarter` | `litellm.marcodifrancesco.com` |
 | **`photos`** | `immich-server`<br>`immich-machine-learning`<br>`postgres`<br>`redis` | `photos.marcodifrancesco.com`<br>*(redirect: `immich.`)* |
-| **`portainer`** | `portainer` | `portainer.marcodifrancesco.com`<br>`portainer.difra.me` |
+| **`portainer`** | `portainer` | `portainer.marcodifrancesco.com` |
 | **`registry`** | `registry` | `registry.marcodifrancesco.com` |
 | **`torrent`** | `prowlarr`<br>`flaresolverr`<br>`radarr`<br>`qbittorrent` | `prowlarr.marcodifrancesco.com`<br>`radarr.marcodifrancesco.com`<br>`qbittorrent.marcodifrancesco.com` |
 
@@ -335,13 +344,12 @@ graph TD
 ## Architecture Details
 
 ### Ingress & Network Flow
-1. **Cloudflare Zero Trust**: Public requests to `*.marcodifrancesco.com` and `*.difra.me` terminate on Cloudflare Edge and pass through an encrypted tunnel (`cloudflared`) directly to the node.
-2. **Traefik Ingress Controller**: Serves traffic on ports `80` and `443`, evaluating Kubernetes `Ingress` resources and applying custom middlewares:
+1. **Cloudflare Zero Trust**: Public requests to `*.marcodifrancesco.com` terminate on Cloudflare Edge and pass through an encrypted tunnel (`cloudflared`) directly to the node.
+2. **Traefik Ingress Controller**: Serves traffic on ports `80` and `443`, evaluating Kubernetes `Ingress` resources and applying custom middlewares.
 
 ### Persistent Storage
 - Persistent volumes are backed by NVMe storage mounted on `/mnt/nvme`.
 - Application configuration and runtime state reside in `/mnt/nvme/k8s/data/<namespace>/`.
-- Shared media volumes (`/mnt/nvme/qbittorrent-downloads`) allow `qbittorrent` to save files directly where `radarr` can import them and `jellyfin` can stream them.
 
 ### Resource Limits
 - Every namespace enforces a baseline `LimitRange` standardizing default CPU/memory limits (`2 CPUs`, `1-2 GiB` RAM) and default requests (`100m CPU`, `128-256 MiB` RAM).
