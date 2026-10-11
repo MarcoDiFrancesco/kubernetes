@@ -24,7 +24,6 @@ graph TD
     classDef portainer fill:#13BEBB,stroke:#0E8C89,color:#000;
     classDef registry fill:#2496ED,stroke:#1565C0,color:#FFF;
     classDef torrent fill:#3B82F6,stroke:#1D4ED8,color:#FFF;
-    classDef limitrange fill:#94A3B8,stroke:#64748B,color:#000;
     classDef cronjob fill:#C084FC,stroke:#9333EA,color:#000;
 
     User((User)) -->|HTTPS| CF_EDGE(("Cloudflare Edge<br>[*.marcodifrancesco.com]"))
@@ -56,8 +55,6 @@ graph TD
     TRAEFIK_SVC -->|qbittorrent.marcodifrancesco.com| TOR_QBIT_SVC
 
     subgraph "Namespace: ai"
-        AI_LR["LimitRange<br>[ai-limit-range]"]
-
         subgraph "Open WebUI"
             AI_SVC{{"Service<br>[open-webui]<br>(ClusterIP)"}}
             AI_DEPLOY(["Deployment<br>[open-webui]"])
@@ -76,8 +73,6 @@ graph TD
     end
 
     subgraph "Namespace: dashboard"
-        DASH_LR["LimitRange<br>[dashboard-limit-range]"]
-
         subgraph "Grafana"
             GRAF_SVC{{"Service<br>[grafana]<br>(ClusterIP)"}}
             GRAF_DEPLOY(["Deployment<br>[grafana]"])
@@ -107,8 +102,6 @@ graph TD
     PROM_DEPLOY -. "scrapes" .-> LLM_SVC
 
     subgraph "Namespace: film"
-        FILM_LR["LimitRange<br>[film-limit-range]"]
-
         subgraph "Jellyfin"
             FILM_SVC{{"Service<br>[jellyfin]<br>(ClusterIP)"}}
             FILM_DEPLOY(["Deployment<br>[jellyfin]"])
@@ -118,8 +111,6 @@ graph TD
     end
 
     subgraph "Namespace: finance"
-        FIN_LR["LimitRange<br>[finance-limit-range]"]
-
         subgraph "Finance API"
             FIN_SVC{{"Service<br>[finance-api]<br>(ClusterIP)"}}
             FIN_DEPLOY(["Deployment<br>[finance-api]"])
@@ -129,7 +120,6 @@ graph TD
     end
 
     subgraph "Namespace: litellm"
-        LLM_LR["LimitRange<br>[litellm-limit-range]"]
         LLM_CJ["CronJob<br>[litellm-restarter]<br>(0 2 * * *)"]
 
         subgraph "LiteLLM Proxy"
@@ -151,8 +141,6 @@ graph TD
     end
 
     subgraph "Namespace: photos"
-        PHOTO_LR["LimitRange<br>[photos-limit-range]"]
-
         subgraph "Immich Server"
             PHOTO_SVC{{"Service<br>[immich-server]<br>(ClusterIP)"}}
             PHOTO_DEPLOY(["Deployment<br>[immich-server]"])
@@ -187,8 +175,6 @@ graph TD
     end
 
     subgraph "Namespace: portainer"
-        PORT_LR["LimitRange<br>[portainer-limit-range]"]
-
         subgraph "Portainer CE"
             PORT_SVC{{"Service<br>[portainer]<br>(ClusterIP)"}}
             PORT_DEPLOY(["Deployment<br>[portainer]"])
@@ -198,8 +184,6 @@ graph TD
     end
 
     subgraph "Namespace: registry"
-        REG_LR["LimitRange<br>[registry-limit-range]"]
-
         subgraph "Docker Registry"
             REG_SVC{{"Service<br>[registry]<br>(ClusterIP)"}}
             REG_DEPLOY(["Deployment<br>[registry]"])
@@ -209,8 +193,6 @@ graph TD
     end
 
     subgraph "Namespace: torrent"
-        TOR_LR["LimitRange<br>[torrent-limit-range]"]
-
         subgraph "Prowlarr"
             TOR_PROW_SVC{{"Service<br>[prowlarr]<br>(ClusterIP)"}}
             TOR_PROW_DEPLOY(["Deployment<br>[prowlarr]"])
@@ -260,7 +242,6 @@ graph TD
     class PORT_SVC,PORT_DEPLOY portainer;
     class REG_SVC,REG_DEPLOY registry;
     class TOR_PROW_SVC,TOR_PROW_DEPLOY,TOR_RAD_SVC,TOR_RAD_DEPLOY,TOR_QBIT_SVC,TOR_QBIT_DEPLOY,TOR_FLARE_SVC,TOR_FLARE_DEPLOY torrent;
-    class AI_LR,DASH_LR,FILM_LR,FIN_LR,LLM_LR,PHOTO_LR,PORT_LR,REG_LR,TOR_LR limitrange;
     class LLM_CJ cronjob;
 ```
 
