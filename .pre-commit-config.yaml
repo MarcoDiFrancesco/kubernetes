@@ -1,0 +1,30 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        args: ['--allow-multiple-documents']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: block-secret-files
+        name: Block Secret Manifests
+        entry: Refusing to commit secret files
+        language: fail
+        files: (\.secret\.yaml$)
+      - id: block-kind-secret
+        name: "Block kind: Secret in tracked manifests"
+        entry: 'kind:\s*Secret'
+        language: pygrep
+        types: [yaml]
+        files: '^manifests/'
