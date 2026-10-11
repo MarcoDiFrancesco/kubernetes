@@ -1,0 +1,71 @@
+# PostgreSQL (VectorChord / pgvectors)
+#
+# Database with vector search extensions for Immich
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: photos
+data:
+  POSTGRES_USER: "postgres"
+  POSTGRES_DB: "immich"
+  POSTGRES_INITDB_ARGS: "--data-checksums"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: photos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+        ports:
+        - name: postgres
+          containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: postgres-config
+        - secretRef:
+            name: postgres-secret
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: dshm
+          mountPath: /dev/shm
+      volumes:
+      - name: postgres-data
+        hostPath:
+          path: /mnt/nvme/k8s/data/photos/postgres
+          type: Directory
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 128Mi
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: photos
+spec:
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres

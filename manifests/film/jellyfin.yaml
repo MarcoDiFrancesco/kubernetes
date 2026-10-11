@@ -1,0 +1,115 @@
+# Jellyfin
+#
+# Media streaming server
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jellyfin-config
+  namespace: film
+data:
+  PUID: "1000"
+  PGID: "1000"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: film
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      containers:
+      - name: jellyfin
+        image: jellyfin/jellyfin
+        ports:
+        - name: http
+          containerPort: 8096
+        envFrom:
+        - configMapRef:
+            name: jellyfin-config
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: movies-4k
+          mountPath: /movies-4k # Write access to for subtitles
+        - name: movies-1080p
+          mountPath: /movies-1080p
+        - name: series
+          mountPath: /series
+        - name: personal-gopro
+          mountPath: /personal-gopro
+          readOnly: true
+        # - name: radarr-downloads
+        #   mountPath: /radarr-downloads
+        - name: qbittorrent-downloads
+          mountPath: /qbittorrent-downloads # Read-only permission since I do not need subtitles in download directory
+          readOnly: true
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/film/jellyfin
+          type: Directory
+      - name: movies-4k
+        hostPath:
+          path: /mnt/nvme/movies-4k
+          type: Directory
+      - name: movies-1080p
+        hostPath:
+          path: /mnt/nvme/movies-1080p
+          type: Directory
+      - name: series
+        hostPath:
+          path: /mnt/nvme/series
+          type: Directory
+      - name: personal-gopro
+        hostPath:
+          path: /mnt/nvme/personal-gopro
+          type: Directory
+      - name: qbittorrent-downloads
+        hostPath:
+          path: /mnt/nvme/qbittorrent-downloads
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: film
+spec:
+  selector:
+    app: jellyfin
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-ingress
+  namespace: film
+spec:
+  rules:
+  - host: film.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              name: http

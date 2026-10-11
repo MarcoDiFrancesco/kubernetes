@@ -1,0 +1,37 @@
+# Redirect
+#
+# Redirect jellyfin.marcodifrancesco.com to film.marcodifrancesco.com
+
+---
+# MIDDLEWARE
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-film
+  namespace: film
+spec:
+  redirectRegex:
+    regex: "^https?://jellyfin\\.marcodifrancesco\\.com/(.*)"
+    replacement: "https://film.marcodifrancesco.com/${1}"
+    permanent: true
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-redirect-ingress
+  namespace: film
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: film-redirect-to-film@kubernetescrd
+spec:
+  rules:
+  - host: jellyfin.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              name: http

@@ -1,0 +1,41 @@
+# Redis / Valkey
+#
+# Caching and job queues for Immich
+
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: photos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+        ports:
+        - name: redis
+          containerPort: 6379
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: photos
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis

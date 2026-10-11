@@ -1,0 +1,73 @@
+# SearXNG
+#
+# Metasearch engine used internally by Open WebUI for web search.
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-config
+  namespace: ai
+data:
+  settings.yml: |
+    use_default_settings: true
+    general:
+      debug: false
+      instance_name: "SearXNG"
+    search:
+      formats:
+        - html
+        - json
+    server:
+      port: 8080
+      bind_address: "0.0.0.0"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+      - name: searxng
+        image: searxng/searxng:2026.10.9-f4822b3fc
+        ports:
+        - name: http
+          containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: searxng-secret
+        volumeMounts:
+        - name: config
+          mountPath: /etc/searxng/settings.yml
+          subPath: settings.yml
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: searxng-config
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng
+  namespace: ai
+spec:
+  selector:
+    app: searxng
+  ports:
+  - name: http
+    port: 80
+    targetPort: http

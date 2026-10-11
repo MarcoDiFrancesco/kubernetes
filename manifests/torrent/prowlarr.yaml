@@ -1,0 +1,77 @@
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prowlarr-config
+  namespace: torrent
+data:
+  PUID: "1000"
+  PGID: "1000"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: torrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      containers:
+      - name: prowlarr
+        image: ghcr.io/linuxserver/prowlarr
+        ports:
+        - name: http
+          containerPort: 9696
+        envFrom:
+        - configMapRef:
+            name: prowlarr-config
+        volumeMounts:
+        - name: prowlarr-config
+          mountPath: /config
+      volumes:
+      - name: prowlarr-config
+        hostPath:
+          path: /mnt/nvme/k8s/data/torrent/prowlarr
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+  namespace: torrent
+spec:
+  selector:
+    app: prowlarr
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prowlarr-ingress
+  namespace: torrent
+spec:
+  rules:
+  - host: prowlarr.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prowlarr
+            port:
+              name: http

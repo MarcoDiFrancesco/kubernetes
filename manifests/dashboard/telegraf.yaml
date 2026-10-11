@@ -1,0 +1,81 @@
+# Telegraf
+# 
+# Agent to fetch Docker and OS metrics
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-config
+  namespace: dashboard
+data:
+  HOST_PROC: "/host/proc"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf
+  namespace: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegraf
+  template:
+    metadata:
+      labels:
+        app: telegraf
+    spec:
+      hostname: pi5 # Prevent hostname change across restarts (e.g. host="02838522a8b9")
+      containers:
+      - name: telegraf
+        image: telegraf:latest
+        command:
+        - /usr/bin/telegraf # Bypass root privilege drop for Docker metrics collection
+        securityContext:
+          runAsUser: 0 # Set for Docker metrics collection
+        ports:
+        - name: metrics
+          containerPort: 9273 # 192.168.1.101:9273/metrics
+        envFrom:
+        - configMapRef:
+            name: telegraf-config
+        volumeMounts:
+        - name: config
+          mountPath: /etc/telegraf
+          readOnly: true
+        - name: docker-sock
+          mountPath: /var/run/docker.sock # Docker metrics
+          readOnly: true
+        - name: proc
+          mountPath: /host/proc # Linux metrics
+          readOnly: true
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/dashboard/telegraf
+          type: Directory
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: proc
+        hostPath:
+          path: /proc
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegraf
+  namespace: dashboard
+spec:
+  selector:
+    app: telegraf
+  ports:
+  - name: metrics
+    port: 80
+    targetPort: metrics

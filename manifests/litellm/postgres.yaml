@@ -1,0 +1,64 @@
+# PostgreSQL
+#
+# Database for LiteLLM proxy
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: litellm
+data:
+  POSTGRES_DB: "litellm"
+  POSTGRES_USER: "llmproxy"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16
+        ports:
+        - name: postgres
+          containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: postgres-config
+        - secretRef:
+            name: postgres-secret
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data # Persists Postgres data across container restarts
+      volumes:
+      - name: postgres-data
+        hostPath:
+          path: /mnt/nvme/k8s/data/litellm/postgres
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: litellm
+spec:
+  selector:
+    app: postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres

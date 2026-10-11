@@ -1,0 +1,87 @@
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-config
+  namespace: torrent
+data:
+  PUID: "1000"
+  PGID: "1000"
+  WEBUI_PORT: "8080"
+  WEBUI_USERNAME: "admin"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: torrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      containers:
+      - name: qbittorrent
+        image: linuxserver/qbittorrent
+        ports:
+        - name: http
+          containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: qbittorrent-config
+        - secretRef:
+            name: qbittorrent-secret
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/torrent/qbittorrent
+          type: Directory
+      - name: downloads
+        hostPath:
+          path: /mnt/nvme/qbittorrent-downloads
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: torrent
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qbittorrent-ingress
+  namespace: torrent
+spec:
+  rules:
+  - host: qbittorrent.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qbittorrent
+            port:
+              name: http

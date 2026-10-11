@@ -1,0 +1,13 @@
+# Ignore persistent data and state
+data/
+.archive_migrated_docker_compose/
+
+# Ignore Kubernetes secrets
+*.secret.yaml
+
+# Sensitive keys and databases
+*.key
+*.pub
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,85 @@
+# Grafana
+# 
+# Dashboard frontend
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: dashboard
+data:
+  GF_SERVER_HTTP_PORT: "3300"
+  GF_AUTH_ANONYMOUS_ENABLED: "true"
+  GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+  GF_LOG_LEVEL: "warn"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        securityContext:
+          runAsUser: 1000
+        ports:
+        - name: http
+          containerPort: 3300
+        envFrom:
+        - configMapRef:
+            name: grafana-config
+        volumeMounts:
+        - name: data # Data directory
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: data
+        hostPath:
+          path: /mnt/nvme/k8s/data/dashboard/grafana
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: dashboard
+spec:
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: dashboard
+spec:
+  rules:
+  - host: dashboard.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              name: http

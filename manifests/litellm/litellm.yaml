@@ -1,0 +1,110 @@
+# LiteLLM
+#
+# LLM proxy gateway and model management
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+data:
+  STORE_MODEL_IN_DB: "True"
+  LITELLM_MODE: "PRODUCTION"
+  LITELLM_LOG: "ERROR"
+  GOOGLE_APPLICATION_CREDENTIALS: "/app/ai-agent-498007-ec813fcd1530.json"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      containers:
+      - name: litellm
+        image: docker.litellm.ai/berriai/litellm:main-stable
+        args:
+        - "--config=/app/config.yaml"
+        ports:
+        - name: http
+          containerPort: 4000 # Map the container port to the host
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health/liveliness
+            port: http
+          initialDelaySeconds: 20
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        envFrom:
+        - configMapRef:
+            name: litellm-config
+        - secretRef:
+            name: litellm-secret
+        volumeMounts:
+        - name: config # LiteLLM config
+          mountPath: /app/config.yaml
+        - name: gcp-key # GCP key
+          mountPath: /app/ai-agent-498007-ec813fcd1530.json
+          readOnly: true
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/litellm/litellm/config.yaml
+          type: File
+      - name: gcp-key
+        hostPath:
+          path: /mnt/nvme/k8s/data/litellm/litellm/ai-agent-498007-ec813fcd1530.json
+          type: File
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm
+  namespace: litellm
+spec:
+  selector:
+    app: litellm
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: litellm-ingress
+  namespace: litellm
+spec:
+  rules:
+  - host: litellm.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: litellm
+            port:
+              name: http

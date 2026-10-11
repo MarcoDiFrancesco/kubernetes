@@ -1,0 +1,87 @@
+# Prometheus
+# 
+# DB for Metrics
+
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        securityContext:
+          runAsUser: 1000
+        args:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.retention.time=90d'
+        ports:
+        - name: http
+          containerPort: 9090
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: data
+          mountPath: /prometheus/data
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/dashboard/prometheus/config
+          type: Directory
+      - name: data
+        hostPath:
+          path: /mnt/nvme/k8s/data/dashboard/prometheus/data
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: dashboard
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# RBAC for Kubelet & CAdvisor scraping
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-metrics-reader
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes/metrics
+  - nodes/spec
+  - nodes/stats
+  - nodes/proxy
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: dashboard

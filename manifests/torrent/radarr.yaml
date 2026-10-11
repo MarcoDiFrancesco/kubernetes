@@ -1,0 +1,89 @@
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radarr-config
+  namespace: torrent
+data:
+  PUID: "1000"
+  PGID: "1000"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: torrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+      - name: radarr
+        image: ghcr.io/linuxserver/radarr
+        ports:
+        - name: http
+          containerPort: 7878
+        envFrom:
+        - configMapRef:
+            name: radarr-config
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: qbittorrent-downloads
+          mountPath: /downloads
+        - name: radarr-downloads
+          mountPath: /radarr-downloads
+      volumes:
+      - name: config
+        hostPath:
+          path: /mnt/nvme/k8s/data/torrent/radarr
+          type: Directory
+      - name: qbittorrent-downloads
+        hostPath:
+          path: /mnt/nvme/qbittorrent-downloads
+          type: Directory
+      - name: radarr-downloads
+        hostPath:
+          path: /mnt/nvme/radarr-downloads
+          type: Directory
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+  namespace: torrent
+spec:
+  selector:
+    app: radarr
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: radarr-ingress
+  namespace: torrent
+spec:
+  rules:
+  - host: radarr.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr
+            port:
+              name: http

@@ -1,0 +1,58 @@
+# Restart LiteLLM daily at 02:00 UTC
+#
+# - refresh provider endpoints
+# - fix LiteLLM memory leak
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: litellm-restarter
+  namespace: litellm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: litellm-restarter
+  namespace: litellm
+rules:
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: litellm-restarter
+  namespace: litellm
+subjects:
+- kind: ServiceAccount
+  name: litellm-restarter
+  namespace: litellm
+roleRef:
+  kind: Role
+  name: litellm-restarter
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: litellm-restarter
+  namespace: litellm
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: litellm-restarter
+          restartPolicy: OnFailure
+          containers:
+          - name: restarter
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - kubectl rollout restart deployment/litellm -n litellm && echo "Restart triggered successfully"

@@ -1,0 +1,96 @@
+# Immich Server
+#
+# High performance self-hosted photo and video backup solution
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-server-config
+  namespace: photos
+data:
+  DB_HOSTNAME: "postgres"
+  DB_PORT: "5432"
+  DB_USERNAME: "postgres"
+  DB_DATABASE_NAME: "immich"
+  REDIS_HOSTNAME: "redis"
+  REDIS_PORT: "6379"
+  IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:80"
+  TZ: "Europe/Rome"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: photos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      containers:
+      - name: immich-server
+        image: ghcr.io/immich-app/immich-server:release
+        ports:
+        - name: http
+          containerPort: 2283
+        envFrom:
+        - configMapRef:
+            name: immich-server-config
+        - secretRef:
+            name: immich-server-secret
+        volumeMounts:
+        - name: upload
+          mountPath: /data
+        - name: localtime
+          mountPath: /etc/localtime
+          readOnly: true
+      volumes:
+      - name: upload
+        hostPath:
+          path: /mnt/nvme/immich
+          type: Directory
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+          type: File
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server
+  namespace: photos
+spec:
+  selector:
+    app: immich-server
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: immich-ingress
+  namespace: photos
+spec:
+  rules:
+  - host: photos.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: immich-server
+            port:
+              name: http

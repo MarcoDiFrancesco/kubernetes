@@ -1,0 +1,61 @@
+# Immich Machine Learning
+#
+# Machine learning server for facial recognition, search, and CLIP tagging
+
+---
+# CONFIGMAP
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-machine-learning-config
+  namespace: photos
+data:
+  TZ: "Europe/Rome"
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  namespace: photos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-machine-learning
+  template:
+    metadata:
+      labels:
+        app: immich-machine-learning
+    spec:
+      containers:
+      - name: immich-machine-learning
+        image: ghcr.io/immich-app/immich-machine-learning:release
+        ports:
+        - name: http
+          containerPort: 3003
+        envFrom:
+        - configMapRef:
+            name: immich-machine-learning-config
+        volumeMounts:
+        - name: model-cache
+          mountPath: /cache
+      volumes:
+      - name: model-cache
+        hostPath:
+          path: /mnt/nvme/k8s/data/photos/model-cache
+          type: DirectoryOrCreate
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-machine-learning
+  namespace: photos
+spec:
+  selector:
+    app: immich-machine-learning
+  ports:
+  - name: http
+    port: 80
+    targetPort: http

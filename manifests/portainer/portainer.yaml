@@ -1,0 +1,76 @@
+# Portainer
+#
+# Docker & container management Web UI
+
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portainer
+  namespace: portainer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portainer
+  template:
+    metadata:
+      labels:
+        app: portainer
+    spec:
+      containers:
+      - name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+        - name: http
+          containerPort: 9000
+        - name: edge
+          containerPort: 8000 # Portainer Edge Agent - Fetch status from k8s cluster (not sure if I'm using it)
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: data
+        hostPath:
+          path: /mnt/nvme/k8s/data/portainer
+          type: Directory
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: portainer
+  namespace: portainer
+spec:
+  selector:
+    app: portainer
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portainer-ingress
+  namespace: portainer
+spec:
+  rules:
+  - host: portainer.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: portainer
+            port:
+              name: http
