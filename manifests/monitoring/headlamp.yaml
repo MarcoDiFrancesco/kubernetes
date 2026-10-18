@@ -1,0 +1,107 @@
+# Headlamp
+#
+# Kubernetes Web UI
+
+---
+# SERVICE ACCOUNT
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: headlamp-admin
+  namespace: monitoring
+---
+# CLUSTER ROLE BINDING
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: headlamp-admin
+  namespace: monitoring
+---
+# DEPLOYMENT
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: headlamp
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: headlamp
+  template:
+    metadata:
+      labels:
+        app: headlamp
+    spec:
+      serviceAccountName: headlamp-admin
+      containers:
+      - name: headlamp
+        image: ghcr.io/headlamp-k8s/headlamp:v0.46.0
+        args:
+        - "-in-cluster"
+        - "-plugins-dir=/headlamp/plugins"
+        ports:
+        - name: http
+          containerPort: 4466
+        readinessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /
+            port: 4466
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            scheme: HTTP
+            path: /
+            port: 4466
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: plugins
+          mountPath: /headlamp/plugins
+      volumes:
+      - name: plugins
+        hostPath:
+          path: /mnt/nvme/k8s/data/monitoring/headlamp/plugins
+          type: DirectoryOrCreate
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: headlamp
+  namespace: monitoring
+spec:
+  selector:
+    app: headlamp
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+---
+# INGRESS
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: headlamp-ingress
+  namespace: monitoring
+spec:
+  rules:
+  - host: headlamp.marcodifrancesco.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: headlamp
+            port:
+              name: http

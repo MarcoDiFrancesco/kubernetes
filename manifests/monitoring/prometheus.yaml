@@ -8,7 +8,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus
-  namespace: dashboard
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -38,11 +38,11 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /mnt/nvme/k8s/data/dashboard/prometheus/config
+          path: /mnt/nvme/k8s/data/monitoring/prometheus/config
           type: Directory
       - name: data
         hostPath:
-          path: /mnt/nvme/k8s/data/dashboard/prometheus/data
+          path: /mnt/nvme/k8s/data/monitoring/prometheus/data
           type: Directory
 ---
 # SERVICE
@@ -50,7 +50,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
-  namespace: dashboard
+  namespace: monitoring
 spec:
   selector:
     app: prometheus
@@ -84,4 +84,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: dashboard
+  namespace: monitoring

@@ -11,6 +11,7 @@ graph TD
     %% Color Definitions
     classDef cloudflare fill:#A0D18C,stroke:#70A65A,color:#000;
     classDef traefik fill:#24A1C1,stroke:#176E84,color:#FFF;
+    classDef headlamp fill:#2E7D32,stroke:#1B5E20,color:#FFF;
     classDef grafana fill:#F29B38,stroke:#C87B2A,color:#000;
     classDef prometheus fill:#E6522C,stroke:#B0391A,color:#FFF;
     classDef telegraf fill:#2B7BB9,stroke:#1E5580,color:#FFF;
@@ -44,6 +45,7 @@ graph TD
     %% Ingress Routing
     TRAEFIK_SVC -->|ai.marcodifrancesco.com| AI_SVC
     TRAEFIK_SVC -->|dashboard.marcodifrancesco.com| GRAF_SVC
+    TRAEFIK_SVC -->|headlamp.marcodifrancesco.com| HEADLAMP_SVC
     TRAEFIK_SVC -->|film.marcodifrancesco.com| FILM_SVC
     TRAEFIK_SVC -->|finance.marcodifrancesco.com/api| FIN_SVC
     TRAEFIK_SVC -->|litellm.marcodifrancesco.com| LLM_SVC
@@ -72,7 +74,14 @@ graph TD
         AI_DEPLOY -. "web search" .-> AI_SEARX_SVC
     end
 
-    subgraph "Namespace: dashboard"
+    subgraph "Namespace: monitoring"
+        subgraph "Headlamp"
+            HEADLAMP_SVC{{"Service<br>[headlamp]<br>(ClusterIP)"}}
+            HEADLAMP_DEPLOY(["Deployment<br>[headlamp]"])
+
+            HEADLAMP_SVC -.-> HEADLAMP_DEPLOY
+        end
+
         subgraph "Grafana"
             GRAF_SVC{{"Service<br>[grafana]<br>(ClusterIP)"}}
             GRAF_DEPLOY(["Deployment<br>[grafana]"])
@@ -229,6 +238,7 @@ graph TD
     %% Apply Colors
     class CF_EDGE,CF_TUNNEL cloudflare;
     class TRAEFIK_SVC,TRAEFIK_METRICS_SVC,TRAEFIK_DEPLOY traefik;
+    class HEADLAMP_SVC,HEADLAMP_DEPLOY headlamp;
     class GRAF_SVC,GRAF_DEPLOY grafana;
     class PROM_SVC,PROM_DEPLOY prometheus;
     class TELE_SVC,TELE_DEPLOY telegraf;
@@ -253,7 +263,7 @@ graph TD
 |---|---|---|
 | **`kube-system`** | `traefik`<br>`traefik-metrics` | `192.168.1.101` |
 | **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
-| **`dashboard`** | `grafana`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)* |
+| **`monitoring`** | `grafana`<br>`headlamp`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)*<br>`headlamp.marcodifrancesco.com` |
 | **`film`** | `jellyfin` | `film.marcodifrancesco.com`<br>*(redirect: `jellyfin.`)* |
 | **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api` |
 | **`litellm`** | `litellm`<br>`postgres`<br>`litellm-restarter` | `litellm.marcodifrancesco.com` |
