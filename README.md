@@ -32,14 +32,7 @@ graph TD
     CF_TUNNEL -->|HTTP| TRAEFIK_SVC
 
     subgraph "Namespace: kube-system"
-        subgraph "Traefik Ingress Controller"
-            TRAEFIK_SVC{{"Service<br>[traefik]<br>(LoadBalancer)"}}
-            TRAEFIK_DEPLOY(["Deployment<br>[traefik]"])
-            TRAEFIK_METRICS_SVC{{"Service<br>[traefik-metrics]<br>(ClusterIP)"}}
-
-            TRAEFIK_SVC -.-> TRAEFIK_DEPLOY
-            TRAEFIK_METRICS_SVC -.-> TRAEFIK_DEPLOY
-        end
+        TRAEFIK_SVC{{"Service<br>[traefik]<br>(LoadBalancer)"}}
     end
 
     %% Ingress Routing
@@ -106,9 +99,6 @@ graph TD
         GRAF_DEPLOY -. "queries" .-> PROM_SVC
         PROM_DEPLOY -. "scrapes" .-> TELE_SVC
     end
-
-    PROM_DEPLOY -. "scrapes" .-> TRAEFIK_METRICS_SVC
-    PROM_DEPLOY -. "scrapes" .-> LLM_SVC
 
     subgraph "Namespace: film"
         subgraph "Jellyfin"
@@ -237,7 +227,7 @@ graph TD
 
     %% Apply Colors
     class CF_EDGE,CF_TUNNEL cloudflare;
-    class TRAEFIK_SVC,TRAEFIK_METRICS_SVC,TRAEFIK_DEPLOY traefik;
+    class TRAEFIK_SVC traefik;
     class HEADLAMP_SVC,HEADLAMP_DEPLOY headlamp;
     class GRAF_SVC,GRAF_DEPLOY grafana;
     class PROM_SVC,PROM_DEPLOY prometheus;
