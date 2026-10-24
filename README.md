@@ -1,6 +1,6 @@
 # Kubernetes Cluster Architecture
 
-A single-node **K3s** cluster running on a **Raspberry Pi 5** (`pi5`), backed by high-speed NVMe storage (`/mnt/nvme`). Inbound traffic is tunneled via Cloudflare Zero Trust into Traefik, which routes traffic across isolated namespaces hosting media, monitoring, AI proxying, container registry, torrenting, and personal finance services.
+Built a single-node **K3s** cluster on **Raspberry Pi 5** (`pi5`) running 15+ services across isolated namespaces, managing stateful databases (PostgreSQL, Redis), resource limits, and Prometheus/Grafana monitoring.
 
 ---
 
@@ -266,3 +266,27 @@ graph TD
 
 ### Resource Limits
 - Every namespace enforces a baseline `LimitRange` standardizing default CPU/memory limits (`2 CPUs`, `2 GiB` RAM) and default requests (`100m CPU`, `128-256 MiB` RAM).
+
+---
+
+## Dashboards
+
+### [Raspberry Dashboard](https://dashboard.marcodifrancesco.com/d/4DFTt9Wnk/raspberry)
+
+<p align="center">
+  <kbd>
+    <a href="https://dashboard.marcodifrancesco.com/d/4DFTt9Wnk/raspberry">
+      <img src="screenshot-dashboard-1.png" alt="Raspberry Dashboard" width="100%">
+    </a>
+  </kbd>
+</p>
+
+### [Uptime Monitor Dashboard](https://dashboard.marcodifrancesco.com/d/uptime-monitor/uptime-monitor)
+
+<p align="center">
+  <kbd>
+    <a href="https://dashboard.marcodifrancesco.com/d/uptime-monitor/uptime-monitor">
+      <img src="screenshot-dashboard-2.png" alt="Uptime Monitor Dashboard" width="100%">
+    </a>
+  </kbd>
+</p>
