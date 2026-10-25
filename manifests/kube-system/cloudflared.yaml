@@ -12,7 +12,7 @@ metadata:
   labels:
     app.kubernetes.io/name: cloudflared
 spec:
-  replicas: 1
+  replicas: 2 # Cloudflared distributes requests across all active replicas
   selector:
     matchLabels:
       app.kubernetes.io/name: cloudflared
@@ -24,7 +24,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
       - name: cloudflared
-        image: cloudflare/cloudflared:2026.9.3
+        image: cloudflare/cloudflared:2026.10.3
         args:
         - tunnel
         - --no-autoupdate
@@ -41,18 +41,17 @@ spec:
           limits:
             cpu: 500m
             memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /ready
-            port: 2000
-          initialDelaySeconds: 10
-          periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /ready
             port: 2000
-          initialDelaySeconds: 5
+          periodSeconds: 5 # Mark as "Not Ready" after 15s -> Stops routing traffic
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
           periodSeconds: 5
+          failureThreshold: 12 # Mark as "Unhealthy" after 60s -> Restarts container
         ports:
         - name: metrics
           containerPort: 2000
