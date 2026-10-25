@@ -29,12 +29,12 @@ graph TD
     classDef torrent fill:#3B82F6,stroke:#1D4ED8,color:#FFF;
     classDef cronjob fill:#C084FC,stroke:#9333EA,color:#000;
 
-    User((User)) -->|HTTPS| CF_EDGE(("Cloudflare Edge<br>[*.marcodifrancesco.com]"))
-    CF_EDGE -->|Tunnel| CF_TUNNEL(["Cloudflare Tunnel<br>[cloudflared]"])
-    CF_TUNNEL -->|HTTP| TRAEFIK_SVC
+    User((User)) -->|"HTTPS (*.marcodifrancesco.com)"| CF_TUNNEL
 
     subgraph "Namespace: kube-system"
-        TRAEFIK_SVC{{"Service<br>[traefik]<br>(LoadBalancer)"}}
+        CF_TUNNEL(["Deployment<br>[cloudflared]"])
+        TRAEFIK_SVC{{"Service<br>[traefik]<br>(ClusterIP)"}}
+        CF_TUNNEL -->|HTTP| TRAEFIK_SVC
     end
 
     %% Ingress Routing
@@ -218,7 +218,7 @@ graph TD
     end
 
     %% Apply Colors
-    class CF_EDGE,CF_TUNNEL cloudflare;
+    class CF_TUNNEL cloudflare;
     class TRAEFIK_SVC traefik;
     class HEADLAMP_SVC,HEADLAMP_DEPLOY headlamp;
     class GRAF_SVC,GRAF_DEPLOY grafana;
@@ -242,7 +242,7 @@ graph TD
 
 | Namespace | Service / Deployment | Ingress Host |
 |---|---|---|
-| **`kube-system`** | `traefik`<br>`traefik-metrics` | `192.168.1.101` |
+| **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics` | Internal (`ClusterIP`) |
 | **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
 | **`monitoring`** | `grafana`<br>`headlamp`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)*<br>`headlamp.marcodifrancesco.com` |
 | **`film`** | `jellyfin` | `film.marcodifrancesco.com`<br>*(redirect: `jellyfin.`)* |
@@ -257,8 +257,8 @@ graph TD
 ## Architecture Details
 
 ### Ingress & Network Flow
-1. **Cloudflare Zero Trust**: Public requests to `*.marcodifrancesco.com` terminate on Cloudflare Edge and pass through an encrypted tunnel (`cloudflared`) directly to the node.
-2. **Traefik Ingress Controller**: Serves traffic on ports `80` and `443`, evaluating Kubernetes `Ingress` resources and applying custom middlewares.
+1. **Cloudflare Zero Trust**: Public requests to `*.marcodifrancesco.com` terminate on Cloudflare Edge and route through the in-cluster `cloudflared` tunnel deployment (`kube-system`) directly to the Traefik service (`http://traefik.kube-system.svc.cluster.local:80`).
+2. **Traefik Ingress Controller**: Evaluates Kubernetes `Ingress` resources and routes traffic internally across namespace services.
 
 ### Persistent Storage
 - Persistent volumes are backed by NVMe storage mounted on `/mnt/nvme`.

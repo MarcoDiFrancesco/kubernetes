@@ -50,7 +50,7 @@ spec:
           type: Directory
       - name: downloads
         hostPath:
-          path: /mnt/nvme/qbittorrent-downloads
+          path: /mnt/nvme/k8s/data/torrent/qbittorrent-downloads
           type: Directory
 ---
 # SERVICE

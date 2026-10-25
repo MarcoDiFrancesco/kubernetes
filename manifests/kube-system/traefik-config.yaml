@@ -1,0 +1,17 @@
+# Traefik Helm Configuration
+#
+# Customizes K3s Traefik chart. Creates a ClusterIP instead of the default LoadBalancer.
+# Used to avoid exposing port 80 and 443 to the local network.
+
+---
+# HELMCHARTCONFIG
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    service:
+      spec:
+        type: ClusterIP

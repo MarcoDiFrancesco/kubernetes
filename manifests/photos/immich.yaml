@@ -55,7 +55,7 @@ spec:
       volumes:
       - name: upload
         hostPath:
-          path: /mnt/nvme/immich
+          path: /mnt/nvme/k8s/data/photos/immich
           type: Directory
       - name: localtime
         hostPath:

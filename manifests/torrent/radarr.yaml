@@ -48,11 +48,11 @@ spec:
           type: Directory
       - name: qbittorrent-downloads
         hostPath:
-          path: /mnt/nvme/qbittorrent-downloads
+          path: /mnt/nvme/k8s/data/torrent/qbittorrent-downloads
           type: Directory
       - name: radarr-downloads
         hostPath:
-          path: /mnt/nvme/radarr-downloads
+          path: /mnt/nvme/k8s/data/torrent/radarr-downloads
           type: Directory
 ---
 # SERVICE
