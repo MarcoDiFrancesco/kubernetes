@@ -1,3 +1,9 @@
+# Traefik Metrics
+#
+# Exposes Prometheus metrics
+
+---
+# SERVICE
 apiVersion: v1
 kind: Service
 metadata:
