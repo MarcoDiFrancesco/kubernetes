@@ -1,7 +1,7 @@
 # Traefik Helm Configuration
 #
-# Customizes K3s Traefik chart. Creates a ClusterIP instead of the default LoadBalancer.
-# Used to avoid exposing port 80 and 443 to the local network.
+# - Uses ClusterIP instead of LoadBalancer (avoids exposing ports 80 and 443 to local network)
+# - Increases probe timeout (5s instead of default 2s) to prevent restarts during CPU spikes
 
 ---
 # HELMCHARTCONFIG
@@ -15,3 +15,9 @@ spec:
     service:
       spec:
         type: ClusterIP
+    readinessProbe:
+      timeoutSeconds: 5
+      failureThreshold: 3 # Mark as "Not Ready" after 30s -> Stops sending traffic
+    livenessProbe:
+      timeoutSeconds: 5
+      failureThreshold: 5 # Mark as "Unhealthy" after 50s -> Restarts pod
