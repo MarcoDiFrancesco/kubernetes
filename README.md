@@ -21,12 +21,16 @@ graph TD
     classDef postgres fill:#336791,stroke:#234A69,color:#FFF;
     classDef redis fill:#DC382D,stroke:#9E241C,color:#FFF;
     classDef ai fill:#10A37F,stroke:#0B6B53,color:#FFF;
-    classDef film fill:#00A4DC,stroke:#00759E,color:#FFF;
+    classDef searxng fill:#06B6D4,stroke:#0891B2,color:#FFF;
+    classDef streaming fill:#00A4DC,stroke:#00759E,color:#FFF;
     classDef finance fill:#059669,stroke:#047857,color:#FFF;
     classDef litellm fill:#7C3AED,stroke:#5B21B6,color:#FFF;
     classDef photos fill:#4F46E5,stroke:#3730A3,color:#FFF;
     classDef registry fill:#2496ED,stroke:#1565C0,color:#FFF;
-    classDef torrent fill:#3B82F6,stroke:#1D4ED8,color:#FFF;
+    classDef prowlarr fill:#EA580C,stroke:#C2410C,color:#FFF;
+    classDef flaresolverr fill:#EC4899,stroke:#BE185D,color:#FFF;
+    classDef radarr fill:#F59E0B,stroke:#D97706,color:#000;
+    classDef qbittorrent fill:#3B82F6,stroke:#1D4ED8,color:#FFF;
     classDef cronjob fill:#C084FC,stroke:#9333EA,color:#000;
 
     User((User)) -->|"HTTPS (*.marcodifrancesco.com)"| CF_TUNNEL
@@ -41,7 +45,7 @@ graph TD
     TRAEFIK_SVC -->|ai.marcodifrancesco.com| AI_SVC
     TRAEFIK_SVC -->|dashboard.marcodifrancesco.com| GRAF_SVC
     TRAEFIK_SVC -->|headlamp.marcodifrancesco.com| HEADLAMP_SVC
-    TRAEFIK_SVC -->|film.marcodifrancesco.com| FILM_SVC
+    TRAEFIK_SVC -->|streaming.marcodifrancesco.com| STREAMING_SVC
     TRAEFIK_SVC -->|finance.marcodifrancesco.com/api| FIN_SVC
     TRAEFIK_SVC -->|litellm.marcodifrancesco.com| LLM_SVC
     TRAEFIK_SVC -->|photos.marcodifrancesco.com| PHOTO_SVC
@@ -101,12 +105,12 @@ graph TD
         PROM_DEPLOY -. "scrapes" .-> TELE_SVC
     end
 
-    subgraph "Namespace: film"
+    subgraph "Namespace: streaming"
         subgraph "Jellyfin"
-            FILM_SVC{{"Service<br>[jellyfin]<br>(ClusterIP)"}}
-            FILM_DEPLOY(["Deployment<br>[jellyfin]"])
+            STREAMING_SVC{{"Service<br>[jellyfin]<br>(ClusterIP)"}}
+            STREAMING_DEPLOY(["Deployment<br>[jellyfin]"])
 
-            FILM_SVC -.-> FILM_DEPLOY
+            STREAMING_SVC -.-> STREAMING_DEPLOY
         end
     end
 
@@ -224,15 +228,19 @@ graph TD
     class GRAF_SVC,GRAF_DEPLOY grafana;
     class PROM_SVC,PROM_DEPLOY prometheus;
     class TELE_SVC,TELE_DEPLOY telegraf;
-    class AI_SVC,AI_DEPLOY,AI_SEARX_SVC,AI_SEARX_DEPLOY ai;
-    class FILM_SVC,FILM_DEPLOY film;
+    class AI_SVC,AI_DEPLOY ai;
+    class AI_SEARX_SVC,AI_SEARX_DEPLOY searxng;
+    class STREAMING_SVC,STREAMING_DEPLOY streaming;
     class FIN_SVC,FIN_DEPLOY finance;
     class LLM_SVC,LLM_DEPLOY litellm;
     class LLM_PG_SVC,LLM_PG_DEPLOY,PHOTO_PG_SVC,PHOTO_PG_DEPLOY postgres;
     class PHOTO_SVC,PHOTO_DEPLOY,PHOTO_ML_SVC,PHOTO_ML_DEPLOY photos;
     class PHOTO_REDIS_SVC,PHOTO_REDIS_DEPLOY redis;
     class REG_SVC,REG_DEPLOY registry;
-    class TOR_PROW_SVC,TOR_PROW_DEPLOY,TOR_RAD_SVC,TOR_RAD_DEPLOY,TOR_QBIT_SVC,TOR_QBIT_DEPLOY,TOR_FLARE_SVC,TOR_FLARE_DEPLOY torrent;
+    class TOR_PROW_SVC,TOR_PROW_DEPLOY prowlarr;
+    class TOR_FLARE_SVC,TOR_FLARE_DEPLOY flaresolverr;
+    class TOR_RAD_SVC,TOR_RAD_DEPLOY radarr;
+    class TOR_QBIT_SVC,TOR_QBIT_DEPLOY qbittorrent;
     class LLM_CJ cronjob;
 ```
 
@@ -245,7 +253,7 @@ graph TD
 | **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics` | Internal (`ClusterIP`) |
 | **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
 | **`monitoring`** | `grafana`<br>`headlamp`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)*<br>`headlamp.marcodifrancesco.com` |
-| **`film`** | `jellyfin` | `film.marcodifrancesco.com`<br>*(redirect: `jellyfin.`)* |
+| **`streaming`** | `jellyfin` | `streaming.marcodifrancesco.com`<br>*(redirect: `film.`, `jellyfin.`)* |
 | **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api` |
 | **`litellm`** | `litellm`<br>`postgres`<br>`litellm-restarter` | `litellm.marcodifrancesco.com` |
 | **`photos`** | `immich-server`<br>`immich-machine-learning`<br>`postgres`<br>`redis` | `photos.marcodifrancesco.com`<br>*(redirect: `immich.`)* |

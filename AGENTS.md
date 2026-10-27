@@ -12,6 +12,7 @@ Single-node K3s homelab cluster on Raspberry Pi 5 (`linux/arm64`), persistent NV
   - Each namespace folder typically contains workload manifests, `limits.yaml` (`LimitRange`), and optional Traefik `redirect.yaml`.
   - Persistent host-path storage resides in `/mnt/nvme/k8s/data/<namespace>/`.
 - **Target architecture**: `linux/arm64`. Any container images or binaries must support arm64.
+- **Architecture diagram conventions**: In the Mermaid overview diagram (`README.md`), color nodes per block/workload (distinct brand colors for each service/tool) rather than applying a single uniform color per namespace.
 
 ## Secrets & Pre-commit Rules (CRITICAL)
 

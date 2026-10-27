@@ -8,7 +8,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jellyfin-config
-  namespace: film
+  namespace: streaming
 data:
   PUID: "1000"
   PGID: "1000"
@@ -18,7 +18,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jellyfin
-  namespace: film
+  namespace: streaming
 spec:
   replicas: 1
   selector:
@@ -58,23 +58,23 @@ spec:
       volumes:
       - name: config
         hostPath:
-          path: /mnt/nvme/k8s/data/film/jellyfin
+          path: /mnt/nvme/k8s/data/streaming/jellyfin
           type: Directory
       - name: movies-4k
         hostPath:
-          path: /mnt/nvme/k8s/data/film/movies-4k
+          path: /mnt/nvme/k8s/data/streaming/movies-4k
           type: Directory
       - name: movies-1080p
         hostPath:
-          path: /mnt/nvme/k8s/data/film/movies-1080p
+          path: /mnt/nvme/k8s/data/streaming/movies-1080p
           type: Directory
       - name: series
         hostPath:
-          path: /mnt/nvme/k8s/data/film/series
+          path: /mnt/nvme/k8s/data/streaming/series
           type: Directory
       - name: personal-gopro
         hostPath:
-          path: /mnt/nvme/k8s/data/film/personal-gopro
+          path: /mnt/nvme/k8s/data/streaming/personal-gopro
           type: Directory
       - name: qbittorrent-downloads
         hostPath:
@@ -86,7 +86,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jellyfin
-  namespace: film
+  namespace: streaming
 spec:
   selector:
     app: jellyfin
@@ -100,10 +100,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: jellyfin-ingress
-  namespace: film
+  namespace: streaming
 spec:
   rules:
-  - host: film.marcodifrancesco.com
+  - host: streaming.marcodifrancesco.com
     http:
       paths:
       - path: /
