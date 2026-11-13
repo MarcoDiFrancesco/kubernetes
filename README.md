@@ -38,8 +38,12 @@ graph TD
     subgraph "Namespace: kube-system"
         CF_TUNNEL(["Deployment<br>[cloudflared]"])
         TRAEFIK_SVC{{"Service<br>[traefik]<br>(ClusterIP)"}}
+        RESTARTER_CJ["CronJob<br>[pod-restarter]<br>(0 2 * * *)"]
         CF_TUNNEL -->|HTTP| TRAEFIK_SVC
     end
+
+    RESTARTER_CJ -. "rollout restart" .-> AI_DEPLOY
+    RESTARTER_CJ -. "rollout restart" .-> LLM_DEPLOY
 
     %% Ingress Routing
     TRAEFIK_SVC -->|ai.marcodifrancesco.com| AI_SVC
@@ -124,8 +128,6 @@ graph TD
     end
 
     subgraph "Namespace: litellm"
-        LLM_CJ["CronJob<br>[litellm-restarter]<br>(0 2 * * *)"]
-
         subgraph "LiteLLM Proxy"
             LLM_SVC{{"Service<br>[litellm]<br>(ClusterIP)"}}
             LLM_DEPLOY(["Deployment<br>[litellm]"])
@@ -141,7 +143,6 @@ graph TD
         end
 
         LLM_DEPLOY -.-> LLM_PG_SVC
-        LLM_CJ -. "rollout restart" .-> LLM_DEPLOY
     end
 
     subgraph "Namespace: photos"
@@ -241,7 +242,7 @@ graph TD
     class TOR_FLARE_SVC,TOR_FLARE_DEPLOY flaresolverr;
     class TOR_RAD_SVC,TOR_RAD_DEPLOY radarr;
     class TOR_QBIT_SVC,TOR_QBIT_DEPLOY qbittorrent;
-    class LLM_CJ cronjob;
+    class RESTARTER_CJ cronjob;
 ```
 
 ---
@@ -250,12 +251,12 @@ graph TD
 
 | Namespace | Service / Deployment | Ingress Host |
 |---|---|---|
-| **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics` | Internal (`ClusterIP`) |
+| **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics`<br>`pod-restarter` | Internal (`ClusterIP`) |
 | **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
 | **`monitoring`** | `grafana`<br>`headlamp`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)*<br>`headlamp.marcodifrancesco.com` |
 | **`streaming`** | `jellyfin` | `streaming.marcodifrancesco.com`<br>*(redirect: `film.`, `jellyfin.`)* |
 | **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api` |
-| **`litellm`** | `litellm`<br>`postgres`<br>`litellm-restarter` | `litellm.marcodifrancesco.com` |
+| **`litellm`** | `litellm`<br>`postgres` | `litellm.marcodifrancesco.com` |
 | **`photos`** | `immich-server`<br>`immich-machine-learning`<br>`postgres`<br>`redis` | `photos.marcodifrancesco.com`<br>*(redirect: `immich.`)* |
 | **`registry`** | `registry` | `registry.marcodifrancesco.com` |
 | **`torrent`** | `prowlarr`<br>`flaresolverr`<br>`radarr`<br>`qbittorrent` | `prowlarr.marcodifrancesco.com`<br>`radarr.marcodifrancesco.com`<br>`qbittorrent.marcodifrancesco.com` |
