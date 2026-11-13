@@ -11,7 +11,7 @@ metadata:
   namespace: streaming
 spec:
   redirectRegex:
-    regex: "^https?://(film|jellyfin)\\.marcodifrancesco\\.com/(.*)"
+    regex: "^https?://(?:film|jellyfin)\\.marcodifrancesco\\.com/(.*)"
     replacement: "https://streaming.marcodifrancesco.com/${1}"
     permanent: true
 ---
