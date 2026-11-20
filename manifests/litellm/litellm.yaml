@@ -33,28 +33,30 @@ spec:
     spec:
       containers:
       - name: litellm
-        image: ghcr.io/berriai/litellm:v1.108.4
+        image: ghcr.io/berriai/litellm:v1.110.2
         args:
         - "--config=/app/config.yaml"
         ports:
         - name: http
           containerPort: 4000 # Map the container port to the host
-        readinessProbe:
+        startupProbe:
           httpGet:
-            path: /health/readiness
+            path: /health/liveliness
             port: http
-          initialDelaySeconds: 15
           periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 18 # Total of 180s before recreating
         livenessProbe:
           httpGet:
             path: /health/liveliness
             port: http
-          initialDelaySeconds: 20
           periodSeconds: 15
-          timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 3 # Total of 45s before recreating
+        readinessProbe:
+          httpGet:
+            path: /health/readiness
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3 # Total of 30s before marking unready
         envFrom:
         - configMapRef:
             name: litellm-config

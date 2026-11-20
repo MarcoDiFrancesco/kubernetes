@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
       - name: open-webui
-        image: ghcr.io/open-webui/open-webui:0.13.3
+        image: ghcr.io/open-webui/open-webui:0.13.4
         ports:
         - name: http
           containerPort: 8080
@@ -48,16 +48,20 @@ spec:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 15
           periodSeconds: 10
-          failureThreshold: 10 # Total of 115s before recreating
+          failureThreshold: 18 # Total of 180s before recreating
         livenessProbe:
           httpGet:
             path: /health
             port: http
           periodSeconds: 15
-          timeoutSeconds: 5
           failureThreshold: 3 # Total of 45s before recreating
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          periodSeconds: 10
+          failureThreshold: 3 # Total of 30s before marking unready
         volumeMounts:
         - name: data
           mountPath: /app/backend/data
