@@ -23,7 +23,7 @@ graph TD
     classDef ai fill:#10A37F,stroke:#0B6B53,color:#FFF;
     classDef searxng fill:#06B6D4,stroke:#0891B2,color:#FFF;
     classDef streaming fill:#00A4DC,stroke:#00759E,color:#FFF;
-    classDef finance fill:#059669,stroke:#047857,color:#FFF;
+    classDef api fill:#059669,stroke:#047857,color:#FFF;
     classDef litellm fill:#7C3AED,stroke:#5B21B6,color:#FFF;
     classDef photos fill:#4F46E5,stroke:#3730A3,color:#FFF;
     classDef registry fill:#2496ED,stroke:#1565C0,color:#FFF;
@@ -39,6 +39,18 @@ graph TD
         CF_TUNNEL(["Deployment<br>[cloudflared]"])
         TRAEFIK_SVC{{"Service<br>[traefik]<br>(ClusterIP)"}}
         RESTARTER_CJ["CronJob<br>[pod-restarter]<br>(0 2 * * *)"]
+        subgraph "Headlamp"
+            HEADLAMP_SVC{{"Service<br>[headlamp]<br>(ClusterIP)"}}
+            HEADLAMP_DEPLOY(["Deployment<br>[headlamp]"])
+
+            HEADLAMP_SVC -.-> HEADLAMP_DEPLOY
+        end
+        subgraph "Docker Registry"
+            REG_SVC{{"Service<br>[registry]<br>(ClusterIP)"}}
+            REG_DEPLOY(["Deployment<br>[registry]"])
+
+            REG_SVC -.-> REG_DEPLOY
+        end
         CF_TUNNEL -->|HTTP| TRAEFIK_SVC
     end
 
@@ -50,10 +62,9 @@ graph TD
     TRAEFIK_SVC -->|dashboard.marcodifrancesco.com| GRAF_SVC
     TRAEFIK_SVC -->|headlamp.marcodifrancesco.com| HEADLAMP_SVC
     TRAEFIK_SVC -->|streaming.marcodifrancesco.com| STREAMING_SVC
-    TRAEFIK_SVC -->|finance.marcodifrancesco.com/api| FIN_SVC
+    TRAEFIK_SVC -->|api.marcodifrancesco.com/api<br>finance.marcodifrancesco.com/api| API_SVC
     TRAEFIK_SVC -->|litellm.marcodifrancesco.com| LLM_SVC
     TRAEFIK_SVC -->|photos.marcodifrancesco.com| PHOTO_SVC
-    TRAEFIK_SVC -->|registry.marcodifrancesco.com| REG_SVC
     TRAEFIK_SVC -->|prowlarr.marcodifrancesco.com| TOR_PROW_SVC
     TRAEFIK_SVC -->|radarr.marcodifrancesco.com| TOR_RAD_SVC
     TRAEFIK_SVC -->|qbittorrent.marcodifrancesco.com| TOR_QBIT_SVC
@@ -76,14 +87,7 @@ graph TD
         AI_DEPLOY -. "web search" .-> AI_SEARX_SVC
     end
 
-    subgraph "Namespace: monitoring"
-        subgraph "Headlamp"
-            HEADLAMP_SVC{{"Service<br>[headlamp]<br>(ClusterIP)"}}
-            HEADLAMP_DEPLOY(["Deployment<br>[headlamp]"])
-
-            HEADLAMP_SVC -.-> HEADLAMP_DEPLOY
-        end
-
+    subgraph "Namespace: dashboard"
         subgraph "Grafana"
             GRAF_SVC{{"Service<br>[grafana]<br>(ClusterIP)"}}
             GRAF_DEPLOY(["Deployment<br>[grafana]"])
@@ -118,12 +122,12 @@ graph TD
         end
     end
 
-    subgraph "Namespace: finance"
-        subgraph "Finance API"
-            FIN_SVC{{"Service<br>[finance-api]<br>(ClusterIP)"}}
-            FIN_DEPLOY(["Deployment<br>[finance-api]"])
+    subgraph "Namespace: api"
+        subgraph "API"
+            API_SVC{{"Service<br>[api]<br>(ClusterIP)"}}
+            API_DEPLOY(["Deployment<br>[api]"])
 
-            FIN_SVC -.-> FIN_DEPLOY
+            API_SVC -.-> API_DEPLOY
         end
     end
 
@@ -179,15 +183,6 @@ graph TD
         PHOTO_DEPLOY -.-> PHOTO_ML_SVC
     end
 
-    subgraph "Namespace: registry"
-        subgraph "Docker Registry"
-            REG_SVC{{"Service<br>[registry]<br>(ClusterIP)"}}
-            REG_DEPLOY(["Deployment<br>[registry]"])
-
-            REG_SVC -.-> REG_DEPLOY
-        end
-    end
-
     subgraph "Namespace: torrent"
         subgraph "Prowlarr"
             TOR_PROW_SVC{{"Service<br>[prowlarr]<br>(ClusterIP)"}}
@@ -232,7 +227,7 @@ graph TD
     class AI_SVC,AI_DEPLOY ai;
     class AI_SEARX_SVC,AI_SEARX_DEPLOY searxng;
     class STREAMING_SVC,STREAMING_DEPLOY streaming;
-    class FIN_SVC,FIN_DEPLOY finance;
+    class API_SVC,API_DEPLOY api;
     class LLM_SVC,LLM_DEPLOY litellm;
     class LLM_PG_SVC,LLM_PG_DEPLOY,PHOTO_PG_SVC,PHOTO_PG_DEPLOY postgres;
     class PHOTO_SVC,PHOTO_DEPLOY,PHOTO_ML_SVC,PHOTO_ML_DEPLOY photos;
@@ -251,14 +246,13 @@ graph TD
 
 | Namespace | Service / Deployment | Ingress Host |
 |---|---|---|
-| **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics`<br>`pod-restarter` | Internal (`ClusterIP`) |
+| **`kube-system`** | `cloudflared`<br>`traefik`<br>`traefik-metrics`<br>`pod-restarter`<br>`headlamp`<br>`registry` | `headlamp.marcodifrancesco.com` |
 | **`ai`** | `open-webui`<br>`searxng` | `ai.marcodifrancesco.com` |
-| **`monitoring`** | `grafana`<br>`headlamp`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)*<br>`headlamp.marcodifrancesco.com` |
+| **`dashboard`** | `grafana`<br>`prometheus`<br>`telegraf` | `dashboard.marcodifrancesco.com`<br>*(redirect: `grafana.`)* |
 | **`streaming`** | `jellyfin` | `streaming.marcodifrancesco.com`<br>*(redirect: `film.`, `jellyfin.`)* |
-| **`finance`** | `finance-api` | `finance.marcodifrancesco.com/api` |
+| **`api`** | `api` | `api.marcodifrancesco.com/api`<br>`finance.marcodifrancesco.com/api` |
 | **`litellm`** | `litellm`<br>`postgres` | `litellm.marcodifrancesco.com` |
 | **`photos`** | `immich-server`<br>`immich-machine-learning`<br>`postgres`<br>`redis` | `photos.marcodifrancesco.com`<br>*(redirect: `immich.`)* |
-| **`registry`** | `registry` | `registry.marcodifrancesco.com` |
 | **`torrent`** | `prowlarr`<br>`flaresolverr`<br>`radarr`<br>`qbittorrent` | `prowlarr.marcodifrancesco.com`<br>`radarr.marcodifrancesco.com`<br>`qbittorrent.marcodifrancesco.com` |
 
 ---

@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: registry-limit-range
-  namespace: registry
+  name: dashboard-limit-range
+  namespace: dashboard
 spec:
   limits:
   - default:

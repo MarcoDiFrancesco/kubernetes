@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: finance-limit-range
-  namespace: finance
+  name: api-limit-range
+  namespace: api
 spec:
   limits:
   - default:

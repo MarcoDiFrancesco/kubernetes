@@ -8,7 +8,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: headlamp-admin
-  namespace: monitoring
+  namespace: kube-system
 ---
 # CLUSTER ROLE BINDING
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22,14 +22,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: headlamp-admin
-  namespace: monitoring
+  namespace: kube-system
 ---
 # DEPLOYMENT
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: headlamp
-  namespace: monitoring
+  namespace: kube-system
 spec:
   replicas: 1
   selector:
@@ -70,7 +70,7 @@ spec:
       volumes:
       - name: plugins
         hostPath:
-          path: /mnt/nvme/k8s/data/monitoring/headlamp/plugins
+          path: /mnt/nvme/k8s/data/kube-system/headlamp/plugins
           type: DirectoryOrCreate
 ---
 # SERVICE
@@ -78,7 +78,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: headlamp
-  namespace: monitoring
+  namespace: kube-system
 spec:
   selector:
     app: headlamp
@@ -92,7 +92,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: headlamp-ingress
-  namespace: monitoring
+  namespace: kube-system
 spec:
   rules:
   - host: headlamp.marcodifrancesco.com
